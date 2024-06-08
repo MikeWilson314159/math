@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        #quiz-container {
+            display: none;
+        }
+        #result-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="input-container">
+        <h1>Welcome to the Math Quiz</h1>
+        <form id="user-form">
+            <label for="first-name">First Name:</label>
+            <input type="text" id="first-name" name="first-name" required><br><br>
+            <label for="last-name">Last Name:</label>
+            <input type="text" id="last-name" name="last-name" required><br><br>
+            <label for="class-period">Class Period:</label>
+            <input type="text" id="class-period" name="class-period" required><br><br>
+            <button type="submit">Start Quiz</button>
+        </form>
+    </div>
+
+    <div id="quiz-container">
+        <h2 id="question"></h2>
+        <p id="percent-correct">Correct: 0%</p>
+        <form id="quiz-form">
+            <input type="number" id="answer" required>
+            <button type="submit">Submit</button>
+        </form>
+        <p id="feedback"></p>
+        <button id="restart-quiz">Restart Quiz</button>
+    </div>
+
+    <div id="result-container">
+        <h1>Quiz Complete</h1>
+        <p id="result-text"></p>
+        <button id="email-results">Email Results</button>
+        <button id="restart-quiz-final">Restart Quiz</button>
+    </div>
+
+    <script>
+        const userForm = document.getElementById('user-form');
+        const quizContainer = document.getElementById('quiz-container');
+        const questionEl = document.getElementById('question');
+        const answerInput = document.getElementById('answer');
+        const feedbackEl = document.getElementById('feedback');
+        const quizForm = document.getElementById('quiz-form');
+        const inputContainer = document.getElementById('input-container');
+        const resultContainer = document.getElementById('result-container');
+        const resultText = document.getElementById('result-text');
+        const emailResultsBtn = document.getElementById('email-results');
+        const restartQuizBtn = document.getElementById('restart-quiz');
+        const restartQuizFinalBtn = document.getElementById('restart-quiz-final');
+        const percentCorrectEl = document.getElementById('percent-correct');
+
+        let firstName, lastName, classPeriod;
+        let currentQuestion = 0;
+        let score = 0;
+        let posNegPairCount = 0;
+
+        const generateRandomNumber = () => {
+            let num;
+            do {
+                num = Math.floor(Math.random() * 31) - 15;
+            } while (num >= -4 && num <= 4);
+            return num;
+        };
+
+        const generatePosNegPair = () => {
+            let num1, num2, sum;
+            do {
+                num1 = generateRandomNumber();
+                num2 = generateRandomNumber();
+                sum = num1 + num2;
+            } while ((num1 > 0 && num2 > 0) || (num1 < 0 && num2 < 0) || Math.abs(sum) < 4);
+            return { num1, num2 };
+        };
+
+        const generateRandomPair = () => {
+            let num1, num2, sum;
+            do {
+                num1 = generateRandomNumber();
+                num2 = generateRandomNumber();
+                sum = num1 + num2;
+            } while (Math.abs(sum) < 4);
+            return { num1, num2 };
+        };
+
+        let currentProblem = { num1: 0, num2: 0 };
+
+        const generateQuestion = () => {
+            if (posNegPairCount < 7) {
+                currentProblem = generatePosNegPair();
+                posNegPairCount++;
+            } else {
+                currentProblem = generateRandomPair();
+            }
+            questionEl.textContent = `What is ${currentProblem.num1} + ${currentProblem.num2}?`;
+            answerInput.value = '';
+            answerInput.focus();
+        };
+
+        const updatePercentCorrect = () => {
+            const percentCorrect = Math.round((score / currentQuestion) * 100);
+            percentCorrectEl.textContent = `Correct: ${percentCorrect}%`;
+        };
+
+        const showResults = () => {
+            quizContainer.style.display = 'none';
+            resultContainer.style.display = 'block';
+            resultText.innerHTML = `<p>${firstName} ${lastName}, Period: ${classPeriod}</p><p>Your score is ${score} out of 10</p>`;
+        };
+
+        const resetQuiz = () => {
+            currentQuestion = 0;
+            score = 0;
+            posNegPairCount = 0;
+            percentCorrectEl.textContent = 'Correct: 0%';
+            resultContainer.style.display = 'none';
+            inputContainer.style.display = 'block';
+            quizContainer.style.display = 'none';
+        };
+
+        userForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            firstName = document.getElementById('first-name').value;
+            lastName = document.getElementById('last-name').value;
+            classPeriod = document.getElementById('class-period').value;
+
+            if (firstName && lastName && classPeriod) {
+                inputContainer.style.display = 'none';
+                quizContainer.style.display = 'block';
+                generateQuestion();
+            }
+        });
+
+        quizForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const userAnswer = parseInt(answerInput.value, 10);
+            const correctAnswer = currentProblem.num1 + currentProblem.num2;
+            feedbackEl.textContent = userAnswer === correctAnswer ? 'Correct!' : `Incorrect, the correct answer was ${correctAnswer}`;
+
+            if (userAnswer === correctAnswer) {
+                score++;
+            }
+
+            currentQuestion++;
+            updatePercentCorrect();
+
+            setTimeout(() => {
+                feedbackEl.textContent = '';
+                if (currentQuestion < 10) {
+                    generateQuestion();
+                } else {
+                    showResults();
+                }
+            }, 2000);
+        });
+
+        emailResultsBtn.addEventListener('click', () => {
+            const mailtoLink = `mailto:wilsonmi@tcaps.net?subject=Math Quiz Results&body=Name: ${firstName} ${lastName}%0D%0APeriod: ${classPeriod}%0D%0AScore: ${score} out of 10`;
+            window.location.href = mailtoLink;
+        });
+
+        restartQuizBtn.addEventListener('click', () => {
+            resetQuiz();
+        });
+
+        restartQuizFinalBtn.addEventListener('click', () => {
+            resetQuiz();
+        });
+    </script>
+</body>
+</html>
